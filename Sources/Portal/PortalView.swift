@@ -40,14 +40,21 @@ public struct PortalView: View {
 
   private let source: UIView?
   private let configuration: Configuration
+  private let size: CGSize?
 
   public init(sourceView: UIView?, configuration: Configuration = .init()) {
+    self.init(sourceView: sourceView, configuration: configuration, size: nil)
+  }
+
+  init(sourceView: UIView?, configuration: Configuration, size: CGSize?) {
     self.source = sourceView
     self.configuration = configuration
+    self.size = size
   }
 
   public var body: some View {
     Representable(portal: self)
+      .frame(width: size?.width, height: size?.height)
   }
 
   func configure(_ portal: NativePortalView) {
@@ -89,6 +96,9 @@ public struct PortalView: View {
       uiView: NativePortalView,
       context: Context
     ) -> CGSize? {
+      if let size = portal.size {
+        return size
+      }
       let size = uiView.intrinsicContentSize
       return size.width > 0 && size.height > 0 ? size : nil
     }

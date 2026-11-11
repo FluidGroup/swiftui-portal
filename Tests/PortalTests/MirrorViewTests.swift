@@ -62,6 +62,14 @@ struct MirrorViewTests {
     }
     #expect(fixture.probes.first === original)
     #expect(fixture.portal === portal)
+
+    fixture.model.width = 80
+    fixture.model.height = 90
+    try await fixture.waitUntil {
+      portal.bounds.size == CGSize(width: 80, height: 90)
+        && portal.sourceView?.bounds.size == portal.bounds.size
+    }
+    #expect(fixture.probes.first === original)
   }
 }
 
@@ -72,6 +80,7 @@ private final class MirrorModel {
   var increment = 0
   var showsMirror = true
   var width: CGFloat = 120
+  var height: CGFloat = 60
   var localeIdentifier = "ja_JP"
   var environmentValue = "inherited"
 }
@@ -103,7 +112,7 @@ private struct StatefulContent: View {
 
   var body: some View {
     ProbeRepresentable(count: count)
-      .frame(width: model.width, height: 60)
+      .frame(width: model.width, height: model.height)
       .onChange(of: model.increment) { count += 1 }
   }
 }
@@ -169,7 +178,10 @@ private final class MirrorFixture {
       if predicate() { return }
       try await Task.sleep(for: .milliseconds(10))
     }
-    #expect(predicate(), "The expected mirror update did not arrive")
+    #expect(
+      predicate(),
+      "Mirror update timed out: locale=\(probes.first?.localeIdentifier ?? "nil"), environment=\(probes.first?.environmentValue ?? "nil"), size=\(String(describing: portal?.bounds.size))"
+    )
     throw MirrorUpdateTimeout()
   }
 
