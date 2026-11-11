@@ -8,6 +8,7 @@ struct MirrorBlurDemo: View {
   @State private var blurEnabled = true
   @State private var direction = VariableBlurView.Direction.blurredBottomClearTop
   @State private var showsReflection = true
+  @State private var fadesReflection = true
 
   var body: some View {
     ScrollView {
@@ -42,15 +43,18 @@ struct MirrorBlurDemo: View {
                 .overlay {
                   VariableBlurView(
                     maxBlurRadius: blurEnabled ? blurRadius : 0,
-                    configuration: .init(direction: direction, startOffset: 0.6)
+                    configuration: .init(
+                      direction: direction,
+                      startOffset: showsReflection ? 0 : 0.6
+                    )
                   )
                 }
                 .clipShape(RoundedRectangle(cornerRadius: 24))
                 .mask {
                   LinearGradient(
                     colors: [
-                      showsReflection ? .black.opacity(0.65) : .black,
-                      showsReflection ? .clear : .black,
+                      showsReflection && fadesReflection ? .black.opacity(0.65) : .black,
+                      showsReflection && fadesReflection ? .clear : .black,
                     ],
                     startPoint: .top,
                     endPoint: .bottom
@@ -64,6 +68,10 @@ struct MirrorBlurDemo: View {
         VStack(spacing: 16) {
           Toggle("Reflection", isOn: $showsReflection)
             .accessibilityIdentifier("reflection-enabled")
+
+          Toggle("Fade reflection", isOn: $fadesReflection)
+            .accessibilityIdentifier("reflection-fade")
+            .disabled(!showsReflection)
 
           Toggle("Progressive blur", isOn: $blurEnabled)
             .accessibilityIdentifier("blur-enabled")

@@ -53,6 +53,7 @@ mirror preview. Native source attribution and the MIT license are retained.
 The runnable progressive blur sample lives in `Development`. With Tuist installed,
 run `tuist generate --path Development --no-open`, then open the generated workspace
 and run `PortalMirrorDemo`. The mirror is flipped vertically and fades downward
-like a reflection, with progressive blur applied after the flip. Turn off
-Reflection to compare it with the upright mirror. The sample uses `BackdropBlur`
+like a reflection, with progressive blur increasing across its full height after
+the flip. Turn off Fade reflection to inspect blur independently, or Reflection
+to compare it with the upright mirror. The sample uses `BackdropBlur`
 1.0.0 or later; the library itself remains dependency-free.
