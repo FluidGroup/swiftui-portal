@@ -7,12 +7,13 @@ struct MirrorBlurDemo: View {
   @State private var blurRadius: CGFloat = 20
   @State private var blurEnabled = true
   @State private var direction = VariableBlurView.Direction.blurredBottomClearTop
+  @State private var showsReflection = true
 
   var body: some View {
     ScrollView {
       VStack(spacing: 24) {
         VStack(spacing: 6) {
-          Text("Mirror + Progressive Blur")
+          Text(showsReflection ? "Live Reflection" : "Mirror + Progressive Blur")
             .font(.title2.bold())
           Text("One counter, two live views")
             .font(.subheadline)
@@ -22,7 +23,7 @@ struct MirrorBlurDemo: View {
         MirrorView {
           CounterCard()
         } layout: { source, mirror in
-          VStack(spacing: 20) {
+          VStack(spacing: showsReflection ? 6 : 20) {
             VStack(spacing: 8) {
               Text("Original · tap to count")
                 .font(.caption.weight(.medium))
@@ -31,10 +32,13 @@ struct MirrorBlurDemo: View {
             }
 
             VStack(spacing: 8) {
-              Text("Live mirror")
-                .font(.caption.weight(.medium))
-                .foregroundStyle(.secondary)
+              if !showsReflection {
+                Text("Live mirror")
+                  .font(.caption.weight(.medium))
+                  .foregroundStyle(.secondary)
+              }
               mirror
+                .scaleEffect(x: 1, y: showsReflection ? -1 : 1)
                 .overlay {
                   VariableBlurView(
                     maxBlurRadius: blurEnabled ? blurRadius : 0,
@@ -42,12 +46,25 @@ struct MirrorBlurDemo: View {
                   )
                 }
                 .clipShape(RoundedRectangle(cornerRadius: 24))
+                .mask {
+                  LinearGradient(
+                    colors: [
+                      showsReflection ? .black.opacity(0.65) : .black,
+                      showsReflection ? .clear : .black,
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                  )
+                }
                 .animation(.snappy, value: blurEnabled)
             }
           }
         }
 
         VStack(spacing: 16) {
+          Toggle("Reflection", isOn: $showsReflection)
+            .accessibilityIdentifier("reflection-enabled")
+
           Toggle("Progressive blur", isOn: $blurEnabled)
             .accessibilityIdentifier("blur-enabled")
 
