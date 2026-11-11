@@ -3,3 +3,7 @@
 /DerivedData
 xcuserdata/
 .DS_Store
+/Development/*.xcodeproj/
+/Development/*.xcworkspace/
+/Development/.build/
+/Development/Derived/

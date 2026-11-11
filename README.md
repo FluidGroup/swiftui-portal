@@ -49,3 +49,8 @@ deliberately uses display-only destinations.
 
 The `Portal` library has no dependencies. Open `Package.swift` for the interactive
 mirror preview. Native source attribution and the MIT license are retained.
+
+The runnable progressive blur sample lives in `Development`. With Tuist installed,
+run `tuist generate --path Development --no-open`, then open the generated workspace
+and run `PortalMirrorDemo`. It combines this package with `BackdropBlur` 1.0.0 or
+later; the library itself remains dependency-free.
