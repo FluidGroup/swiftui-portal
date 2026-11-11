@@ -40,6 +40,10 @@ struct MirrorBlurDemo: View {
               }
               mirror
                 .scaleEffect(x: 1, y: showsReflection ? -1 : 1)
+                // Include the card's outline in the blur, with room for its halo.
+                .padding(.horizontal, 40)
+                .padding(.top, direction == .blurredTopClearBottom ? 40 : 0)
+                .padding(.bottom, 40)
                 .overlay {
                   VariableBlurView(
                     maxBlurRadius: blurEnabled ? blurRadius : 0,
@@ -48,8 +52,9 @@ struct MirrorBlurDemo: View {
                       startOffset: showsReflection ? 0 : 0.6
                     )
                   )
+                  // Blend the finite backdrop bounds into the surrounding view.
+                  .mask { blurBoundsMask }
                 }
-                .clipShape(RoundedRectangle(cornerRadius: 24))
                 .mask {
                   LinearGradient(
                     colors: [
@@ -105,6 +110,27 @@ struct MirrorBlurDemo: View {
       .padding(.horizontal, 20)
     }
     .background(Color(uiColor: .systemGroupedBackground))
+  }
+
+  private var blurBoundsMask: some View {
+    HStack(spacing: 0) {
+      LinearGradient(colors: [.clear, .black], startPoint: .leading, endPoint: .trailing)
+        .frame(width: 40)
+      Rectangle()
+      LinearGradient(colors: [.black, .clear], startPoint: .leading, endPoint: .trailing)
+        .frame(width: 40)
+    }
+    .mask {
+      VStack(spacing: 0) {
+        if direction == .blurredTopClearBottom {
+          LinearGradient(colors: [.clear, .black], startPoint: .top, endPoint: .bottom)
+            .frame(height: 40)
+        }
+        Rectangle()
+        LinearGradient(colors: [.black, .clear], startPoint: .top, endPoint: .bottom)
+          .frame(height: 40)
+      }
+    }
   }
 
 }
