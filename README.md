@@ -1,5 +1,7 @@
 # SwiftUI Portal
 
+![SwiftUI Portal — one source card and its softly blurred reflection.](Documentation/Assets/hero.png)
+
 A live mirror of mounted UIKit or SwiftUI content. Extracted from
 [ContextOverlay](https://github.com/FluidGroup/swiftui-context-overlay), with the
 native implementation originally from FluidInterfaceKit. Uses private UIKit
