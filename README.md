@@ -24,6 +24,51 @@ Place `source` once and keep it mounted. The mirror displays the same live
 rendering, including state changes and animations, while leaving the original
 visible. It passes touches through. It does not create another `CounterView`.
 
+For source and destination views in separate hierarchy branches, declare a
+`@PortalSource` in their common owner. Like `@Namespace`, it provides a stable
+`PortalSource.ID` across updates to that owner's view identity:
+
+```swift
+struct ConnectedViews: View {
+  @PortalSource private var counterPortal
+
+  var body: some View {
+    MainContent(source: counterPortal)
+      .safeAreaInset(edge: .bottom) {
+        FloatingLayer(source: counterPortal)
+      }
+  }
+}
+
+private struct MainContent: View {
+  let source: PortalSource.ID
+
+  var body: some View {
+    ScrollView {
+      CounterView()
+        .portalSource(source)
+    }
+  }
+}
+
+private struct FloatingLayer: View {
+  let source: PortalSource.ID
+
+  var body: some View {
+    PortalView(source: source, configuration: .mirror)
+  }
+}
+```
+
+Pass the ID explicitly or through your own environment value. Register one source
+per ID; its local state and environment stay at the source, and destinations follow
+its measured size. Removing a destination leaves the source mounted. Removing the
+source disconnects its destinations and collapses their intrinsic size to zero;
+remounting reconnects them to the newly mounted content. The connection does not
+keep removed source content alive. As with ordinary SwiftUI content, unmounting
+the source resets its local state. Cross-window and cross-scene rendering are
+not guaranteed. `MirrorView` uses this same connection internally.
+
 For an existing UIView, use the same renderer directly:
 
 ```swift
@@ -60,3 +105,5 @@ the background; it remains in place when Fade reflection is off. Turn off Fade
 reflection to inspect blur independently, or Reflection to compare it with the
 upright mirror. The sample uses `BackdropBlur`
 1.0.0 or later; the library itself remains dependency-free.
+The Separate tab places a registered source inside scroll content and its mirror
+in a root inset, with controls for source/destination removal and parent updates.

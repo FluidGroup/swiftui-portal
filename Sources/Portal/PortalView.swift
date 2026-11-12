@@ -39,25 +39,39 @@ public struct PortalView: View {
   }
 
   private let source: UIView?
+  private let sourceID: PortalSource.ID?
   private let configuration: Configuration
-  private let size: CGSize?
 
   public init(sourceView: UIView?, configuration: Configuration = .init()) {
-    self.init(sourceView: sourceView, configuration: configuration, size: nil)
+    self.source = sourceView
+    self.sourceID = nil
+    self.configuration = configuration
   }
 
-  init(sourceView: UIView?, configuration: Configuration, size: CGSize?) {
-    self.source = sourceView
+  /// Displays a source registered in another branch of the same on-screen view tree.
+  /// An unmounted source leaves this portal empty with zero intrinsic size.
+  public init(source: PortalSource.ID, configuration: Configuration = .init()) {
+    self.source = nil
+    self.sourceID = source
     self.configuration = configuration
-    self.size = size
   }
 
   public var body: some View {
-    Representable(portal: self)
-      .frame(width: size?.width, height: size?.height)
+    if let sourceID {
+      let storage = sourceID.storage
+      let size = storage.sourceView == nil ? CGSize.zero : storage.size ?? .zero
+      Representable(portal: self, source: storage.sourceView, size: size)
+        .frame(width: size.width, height: size.height)
+    } else {
+      Representable(portal: self, source: source, size: nil)
+    }
   }
 
   func configure(_ portal: NativePortalView) {
+    configure(portal, source: sourceID?.storage.sourceView ?? source)
+  }
+
+  private func configure(_ portal: NativePortalView, source: UIView?) {
     let sourceChanged = portal.sourceView !== source
     if sourceChanged {
       portal.disconnect()
@@ -78,17 +92,19 @@ public struct PortalView: View {
   struct Representable: UIViewRepresentable {
 
     let portal: PortalView
+    let source: UIView?
+    let size: CGSize?
 
     func makeUIView(context: Context) -> NativePortalView {
       guard let view = NativePortalView(sourceView: nil) else {
         preconditionFailure("Native portal is unavailable on this runtime")
       }
-      portal.configure(view)
+      portal.configure(view, source: source)
       return view
     }
 
     func updateUIView(_ uiView: NativePortalView, context: Context) {
-      portal.configure(uiView)
+      portal.configure(uiView, source: source)
     }
 
     func sizeThatFits(
@@ -96,7 +112,7 @@ public struct PortalView: View {
       uiView: NativePortalView,
       context: Context
     ) -> CGSize? {
-      if let size = portal.size {
+      if let size {
         return size
       }
       let size = uiView.intrinsicContentSize

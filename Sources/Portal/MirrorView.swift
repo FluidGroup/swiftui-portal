@@ -8,8 +8,7 @@ public struct MirrorView<Content: View, Layout: View>: View {
   private let content: Content
   private let layout: (MirrorSource<Content>, PortalView) -> Layout
 
-  @State private var sourceView: UIView?
-  @State private var sourceSize: CGSize?
+  @PortalSource private var source
 
   public init(
     @ViewBuilder content: () -> Content,
@@ -21,17 +20,8 @@ public struct MirrorView<Content: View, Layout: View>: View {
 
   public var body: some View {
     layout(
-      MirrorSource(
-        content: content,
-        onSizeChange: { sourceSize = $0 },
-        onAppear: { sourceView = $0 },
-        onDisappear: { view in
-          if sourceView === view {
-            sourceView = nil
-          }
-        }
-      ),
-      PortalView(sourceView: sourceView, configuration: .mirror, size: sourceSize)
+      MirrorSource(content: content, source: source),
+      PortalView(source: source, configuration: .mirror)
     )
   }
 
@@ -40,23 +30,14 @@ public struct MirrorView<Content: View, Layout: View>: View {
 public struct MirrorSource<Content: View>: View {
 
   private let content: Content
-  private let onSizeChange: (CGSize) -> Void
-  private let onAppear: (UIView?) -> Void
-  private let onDisappear: (UIView?) -> Void
+  private let source: PortalSource.ID
 
   @State private var reference = Reference()
   @State private var contentSize: CGSize?
 
-  fileprivate init(
-    content: Content,
-    onSizeChange: @escaping (CGSize) -> Void,
-    onAppear: @escaping (UIView?) -> Void,
-    onDisappear: @escaping (UIView?) -> Void
-  ) {
+  init(content: Content, source: PortalSource.ID) {
     self.content = content
-    self.onSizeChange = onSizeChange
-    self.onAppear = onAppear
-    self.onDisappear = onDisappear
+    self.source = source
   }
 
   public var body: some View {
@@ -66,13 +47,38 @@ public struct MirrorSource<Content: View>: View {
       onContentSizeChange: { contentSize = $0 }
     )
       .frame(idealWidth: contentSize?.width, idealHeight: contentSize?.height)
-      .onGeometryChange(for: CGSize.self) { $0.size } action: { onSizeChange($0) }
-      .onAppear { onAppear(reference.view) }
-      .onDisappear { onDisappear(reference.view) }
+      .onGeometryChange(for: CGSize.self) { $0.size } action: {
+        reference.size = $0
+        reference.storage?.updateSize($0, for: reference.view)
+      }
+      .onAppear { reference.connect(to: source) }
+      .onDisappear { reference.disconnect() }
+      .onChange(of: source) { _, source in
+        if reference.storage != nil {
+          reference.connect(to: source)
+        }
+      }
   }
 
   private final class Reference {
+
     weak var view: UIView?
+    var size: CGSize = .zero
+    private(set) var storage: PortalSource.Storage?
+
+    func connect(to source: PortalSource.ID) {
+      if storage !== source.storage {
+        disconnect()
+      }
+      storage = source.storage
+      storage?.connect(view, size: size)
+    }
+
+    func disconnect() {
+      storage?.disconnect(view)
+      storage = nil
+    }
+
   }
 
   private struct Representable: UIViewControllerRepresentable {
@@ -80,6 +86,10 @@ public struct MirrorSource<Content: View>: View {
     let content: Content
     let reference: Reference
     let onContentSizeChange: (CGSize) -> Void
+
+    func makeCoordinator() -> Reference {
+      reference
+    }
 
     func makeUIViewController(context: Context) -> UIHostingController<AnyView> {
       let controller = UIHostingController(
@@ -93,6 +103,13 @@ public struct MirrorSource<Content: View>: View {
 
     func updateUIViewController(_ uiViewController: UIHostingController<AnyView>, context: Context) {
       uiViewController.rootView = rootView(environment: context.environment)
+    }
+
+    static func dismantleUIViewController(
+      _ uiViewController: UIHostingController<AnyView>,
+      coordinator: Reference
+    ) {
+      coordinator.disconnect()
     }
 
     private func rootView(environment: EnvironmentValues) -> AnyView {

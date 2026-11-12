@@ -5,7 +5,13 @@ struct PortalMirrorDemoApp: App {
 
   var body: some Scene {
     WindowGroup {
-      MirrorBlurDemo()
+      TabView {
+        MirrorBlurDemo()
+          .tabItem { Label("Reflection", systemImage: "water.waves") }
+
+        SeparateHierarchyDemo()
+          .tabItem { Label("Separate", systemImage: "square.on.square") }
+      }
     }
   }
 

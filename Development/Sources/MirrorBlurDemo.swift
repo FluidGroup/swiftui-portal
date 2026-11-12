@@ -135,7 +135,7 @@ struct MirrorBlurDemo: View {
 
 }
 
-private struct CounterCard: View {
+struct CounterCard: View {
 
   @State private var count = 0
 
